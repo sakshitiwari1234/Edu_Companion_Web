@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EduCompanion | AI Concept Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9fbfc;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .dark-mode {
+      background-color: #121212 !important;
+      color: #f0f0f0 !important;
+    }
+    .navbar {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .form-control {
+      max-width: 400px;
+    }
+    .yt-iframe {
+      width: 100%;
+      height: 450px;
+      border-radius: 12px;
+      margin-top: 20px;
+    }
+    .concept-card {
+      background: white;
+      border-left: 5px solid #0d6efd;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+      transition: transform 0.3s;
+    }
+    .concept-card:hover {
+      transform: translateY(-5px);
+    }
+    .dark-mode .concept-card {
+      background-color: #1f1f1f;
+      border-color: #0d6efd;
+    }
+    .spinner-border {
+      width: 2rem;
+      height: 2rem;
+    }
+    footer {
+      margin-top: 60px;
+      padding: 20px 0;
+      background-color: #f0f4f8;
+      text-align: center;
+      font-size: 14px;
+    }
+    .dark-mode footer {
+      background-color: #1c1c1c;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg bg-white sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-primary" href="#">EduCompanion</a>
+      <div class="ms-auto">
+        <button class="btn btn-outline-dark" onclick="toggleDarkMode()">
+          <i class="bi bi-moon-fill"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Section -->
+  <div class="container my-5">
+    <h2 class="text-center mb-4">📽️ Watch & Explore Concepts</h2>
+    <div class="d-flex justify-content-center mb-4">
+      <input type="text" id="videoIdInput" class="form-control me-2" placeholder="Enter YouTube Video ID">
+      <button class="btn btn-primary" onclick="fetchVideo()">Fetch</button>
+    </div>
+
+    <div id="videoDetails" class="text-center mb-4"></div>
+    <div id="concepts" class="mt-4"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    &copy; 2025 EduCompanion | Explore || Express || Learn || Grow
+  </footer>
+
+  <!-- Script -->
+  <script>
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+    }
+
+    async function fetchVideo() {
+      const videoId = document.getElementById("videoIdInput").value.trim();
+      const videoDetails = document.getElementById("videoDetails");
+      const conceptsBox = document.getElementById("concepts");
+
+      if (!videoId) {
+        alert("Please enter a valid YouTube Video ID.");
+        return;
+      }
+
+      videoDetails.innerHTML = `
+        <div class="d-flex justify-content-center my-3">
+          <div class="spinner-border text-primary" role="status"></div>
+        </div>
+      `;
+      conceptsBox.innerHTML = '';
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/videos/${videoId}`);
+        const data = await res.json();
+
+        if (data.error) {
+          videoDetails.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+          return;
+        }
+
+        videoDetails.innerHTML = `
+          <h3 class="mb-2">${data.title}</h3>
+          <p class="text-muted">Channel: ${data.channel}</p>
+          <iframe class="yt-iframe" src="https://www.youtube.com/embed/${data.videoId}" frameborder="0" allowfullscreen></iframe>
+        `;
+
+        if (data.concepts?.length > 0) {
+          conceptsBox.innerHTML = `<h4 class="mb-3">📘 Mapped NCERT Concepts</h4>`;
+          data.concepts.forEach((c, i) => {
+            conceptsBox.innerHTML += `
+              <div class="concept-card">
+                <h5>🧠 Concept ${i + 1}</h5>
+                <p><strong>Chapter:</strong> ${c.chapter}</p>
+                <p><strong>Section:</strong> ${c.section || 'N/A'}</p>
+                <p><strong>Page:</strong> ${c.page || 'N/A'}</p>
+                <p><strong>Description:</strong> ${c.description}</p>
+              </div>
+            `;
+          });
+        } else {
+          conceptsBox.innerHTML = `<div class="alert alert-warning">No concepts found for this video.</div>`;
+        }
+      } catch (err) {
+        console.error(err);
+        videoDetails.innerHTML = `<div class="alert alert-danger">Failed to load video data.</div>`;
+      }
+    }
+  </script>
+
+</body>
+</html>
